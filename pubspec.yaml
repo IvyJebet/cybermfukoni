@@ -1,0 +1,69 @@
+name: cybermfukoni
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+# Dependencies specify other packages that your package needs in order to work.
+dependencies:
+  flutter:
+    sdk: flutter
+  # UI & Utilities
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.1.0  # For outstanding typography
+  flutter_animate: ^4.2.0 # For gamified animations
+  
+  # State Management & Architecture
+  provider: ^6.0.5
+  
+  # Offline Database
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # Security & Networking
+  freerasp: ^6.0.0
+  http: ^1.1.0
+  intl: ^0.18.1
+  url_launcher: ^6.1.11
+  share_plus: ^7.2.1
+
+  # File Saving & Permissions (Added for Chonjo License Feature)
+  gal: ^2.3.0
+  permission_handler: ^11.0.1
+  path_provider: ^2.1.1
+  
+  # NOTE: 'zxcvbn' removed. We are using a custom entropy engine.
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  # App Icon Generator
+  flutter_launcher_icons: ^0.13.1
+
+# Configuration for the App Icon
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon.jpg"
+  remove_alpha_ios: true
+  min_sdk_android: 21
+
+# The following section is specific to Flutter packages.
+flutter:
+  
+  # The following line ensures that the Material Icons font is
+  # included with your application.
+  uses-material-design: true
+
+  # To add assets to your application, add an assets section, like this:
+  assets:
+    - assets/matrix_bg.jpg
+    - assets/icon.jpg
+    - assets/avatar.png  # <--- For Chonjo/Profile Screen
