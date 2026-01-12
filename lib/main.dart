@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'screens/landing_screen.dart';
-import 'screens/home_screen.dart'; // Required for auto-login routing
+import 'screens/home_screen.dart'; 
 
 void main() async {
   // 1. Ensure bindings are initialized (Required before Hive init)
@@ -60,21 +60,90 @@ class CyberMfukoniApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Cyber Color Palette Constants
+    const Color cyberBlack = Color(0xFF0D1117); // Deep GitHub-like dark
+    const Color cyberSurface = Color(0xFF161B22); // Slightly lighter card color
+    const Color cyberGreen = Color(0xFF00E676); // Neon Green for accents
+
     return MaterialApp(
       title: 'Cyber Mfukoni',
       debugShowCheckedModeBanner: false,
       
-      // 6. Cyber Green Theme Configuration
+      // 6. Professional Dark Theme Configuration
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF0D1117), // Dark cyber background
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1B5E20), // Cyber Green
-          primary: const Color(0xFF1B5E20),
-          secondary: const Color(0xFF4CAF50),
-          brightness: Brightness.dark,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: cyberBlack,
+        primaryColor: cyberGreen,
+        
+        // Color Scheme
+        colorScheme: const ColorScheme.dark(
+          primary: cyberGreen,
+          secondary: cyberGreen,
+          surface: cyberSurface,
+          background: cyberBlack,
+          onPrimary: Colors.black, // Text on green buttons
+          onSurface: Colors.white, // Text on dark cards
         ),
-        textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
+
+        // Modern Text Theme
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).apply(
+          bodyColor: Colors.grey[300],
+          displayColor: Colors.white,
+        ),
+
+        // Card Styling (Glassy/Modern)
+        // FIXED: Changed CardTheme to CardThemeData
+        cardTheme: CardThemeData(
+          color: cyberSurface,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withOpacity(0.05)),
+          ),
+        ),
+
+        // Input Fields Styling
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: cyberSurface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: cyberGreen, width: 2),
+          ),
+          hintStyle: TextStyle(color: Colors.grey[600]),
+          prefixIconColor: Colors.grey[500],
+        ),
+
+        // Button Styling
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: cyberGreen,
+            foregroundColor: Colors.black,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
+          ),
+        ),
+
+        // AppBar Styling
+        appBarTheme: AppBarTheme(
+          backgroundColor: cyberBlack,
+          elevation: 0,
+          centerTitle: true,
+          titleTextStyle: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
       ),
       
       // 7. Use the dynamic start screen (Home or Landing)

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import '../widgets/custom_inputs.dart';
+import '../widgets/custom_inputs.dart'; 
 import 'signup_screen.dart';
 import 'home_screen.dart';
 import 'landing_screen.dart';
@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadRememberedUser();
   }
 
-  // NEW: Load saved email if "Remember Me" was used before
+  // Load saved email if "Remember Me" was used before
   void _loadRememberedUser() {
     final settings = Hive.box('settings');
     if (settings.containsKey('rememberedEmail')) {
@@ -42,8 +42,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() {
     final String email = _emailController.text.trim();
     final String password = _passwordController.text.trim();
-    final Box userBox = Hive.box('users'); // Access the User DB
-    final Box settingsBox = Hive.box('settings'); // Access Settings DB
+    final Box userBox = Hive.box('users'); 
+    final Box settingsBox = Hive.box('settings'); 
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,23 +70,21 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // 3. Success & Session Saving
-    
-    // A. Save Session for Auto-Login (Handled in main.dart)
     settingsBox.put('lastLoggedInUser', email);
     settingsBox.put('lastActiveTime', DateTime.now().toString());
 
-    // B. Handle "Remember Me" Persistence
+    // Handle "Remember Me" Persistence
     if (_rememberMe) {
       settingsBox.put('rememberedEmail', email);
     } else {
       settingsBox.delete('rememberedEmail');
     }
 
-    // C. Navigate and Clear History (Back button will now exit app)
+    // Navigate and Clear History
     Navigator.pushAndRemoveUntil(
       context, 
       MaterialPageRoute(builder: (_) => const HomeScreen()), 
-      (route) => false // Removes all previous routes
+      (route) => false 
     );
   }
 
@@ -103,7 +101,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (userBox.containsKey(email)) {
-      // Navigate to Reset Page
       Navigator.push(context, MaterialPageRoute(builder: (_) => ResetPasswordScreen(email: email)));
     } else {
        ScaffoldMessenger.of(context).showSnackBar(
@@ -115,21 +112,37 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
 
     return Scaffold(
+      // Background matches theme scaffold color
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SingleChildScrollView(
         child: SizedBox(
           height: size.height,
           child: Stack(
             children: [
-              // 1. Matrix Background
-              Container(
-                height: size.height * 0.45,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/matrix_bg.jpg'),
-                    fit: BoxFit.cover,
-                    colorFilter: ColorFilter.mode(Colors.black38, BlendMode.darken),
+              // 1. Matrix Background with Gradient Fade
+              Positioned.fill(
+                bottom: size.height * 0.5,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/matrix_bg.jpg'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          theme.scaffoldBackgroundColor, // Fade into dark bg
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -141,52 +154,68 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: GestureDetector(
                   onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LandingScreen())),
                   child: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.black45,
                       shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24)
                     ),
                     child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
                   ),
                 ),
               ),
 
-              // 3. White Container
+              // 3. Main Login Card (Dark & Modern)
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: size.height * 0.75,
                 child: Container(
+                  height: size.height * 0.7,
                   padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: theme.cardColor, // Uses the cyberSurface color
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(40),
                       topRight: Radius.circular(40),
                     ),
+                    border: Border(
+                      top: BorderSide(color: Colors.white.withOpacity(0.05), width: 1)
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.5),
+                        blurRadius: 30,
+                        offset: const Offset(0, -10),
+                      )
+                    ]
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Welcome Back",
-                        style: TextStyle(color: Color(0xFF1B5E20), fontSize: 30, fontWeight: FontWeight.bold),
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: theme.primaryColor, 
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                       const SizedBox(height: 5),
-                      const Text("Login to your account", style: TextStyle(color: Colors.grey, fontSize: 16)),
+                      Text("Secure login to your digital boma", style: theme.textTheme.bodyMedium),
                       const SizedBox(height: 40),
 
-                      // Email Input (With Auto-Caps)
+                      // Email Input
                       CyberTextField(
                         hint: "Email Address",
                         icon: Icons.email_outlined,
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress, // Optimized for email
-                        textCapitalization: TextCapitalization.none, // Emails usually lowercase
+                        keyboardType: TextInputType.emailAddress,
+                        textCapitalization: TextCapitalization.none,
                       ),
 
-                      // Password Input (With Toggle)
+                      const SizedBox(height: 15),
+
+                      // Password Input
                       CyberTextField(
                         hint: "Password",
                         icon: Icons.lock_outline,
@@ -212,17 +241,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Icon(
                                     _rememberMe ? Icons.check_circle : Icons.circle_outlined, 
-                                    color: const Color(0xFF1B5E20), 
+                                    color: theme.primaryColor, 
                                     size: 20
                                   ),
-                                  const SizedBox(width: 5),
-                                  const Text("Remember Me", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                  const SizedBox(width: 8),
+                                  const Text("Remember Me", style: TextStyle(color: Colors.grey)),
                                 ],
                               ),
                             ),
                             TextButton(
                               onPressed: _handleForgotPassword,
-                              child: const Text("Forgot Password?", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              child: const Text("Forgot Password?", style: TextStyle(color: Colors.grey)),
                             ),
                           ],
                         ),
@@ -230,23 +259,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 20),
 
-                      // Login Button
-                      CyberButton(
-                        text: "Login",
-                        onPressed: _handleLogin,
+                      // Login Button (Uses Theme.elevatedButtonTheme)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _handleLogin,
+                          child: const Text("LOGIN"),
+                        ),
                       ),
 
                       const Spacer(),
 
+                      // Sign Up Link
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text("Don't have account? ", style: TextStyle(color: Colors.grey)),
                           GestureDetector(
                             onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SignupScreen())),
-                            child: const Text(
+                            child: Text(
                               "Sign up",
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B5E20), decoration: TextDecoration.underline),
+                              style: TextStyle(fontWeight: FontWeight.bold, color: theme.primaryColor, decoration: TextDecoration.underline),
                             ),
                           ),
                         ],
@@ -288,32 +321,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     final box = Hive.box('users');
     final oldData = box.get(widget.email);
     box.put(widget.email, {
-      ...oldData, // keep name, etc
+      ...oldData, 
       'password': _newPassController.text.trim()
     });
 
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password Updated! Please Login.")));
-    Navigator.pop(context); // Go back to login
+    Navigator.pop(context); 
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Renew Password"), backgroundColor: Colors.deepPurple.shade100),
+      appBar: AppBar(title: const Text("Renew Password")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             Text("Resetting password for:\n${widget.email}", textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
+            const SizedBox(height: 30),
+            
             CyberTextField(
               hint: "Enter New Password", 
               icon: Icons.lock_reset, 
               isPassword: true, 
               controller: _newPassController
             ),
-            const SizedBox(height: 20),
-            CyberButton(text: "Update Password", onPressed: _updatePassword)
+            
+            const SizedBox(height: 30),
+            
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(onPressed: _updatePassword, child: const Text("Update Password")),
+            )
           ],
         ),
       ),

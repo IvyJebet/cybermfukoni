@@ -94,41 +94,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // WRAP IN VALUE LISTENABLE BUILDER to listen to Language Changes instantly
     return ValueListenableBuilder(
       valueListenable: Hive.box('settings').listenable(),
       builder: (context, Box box, _) {
+        final theme = Theme.of(context);
         return Scaffold(
-          backgroundColor: const Color(0xFFE8F5E9),
+          // Uses Theme.scaffoldBackgroundColor (Dark)
           body: IndexedStack(
             index: _currentIndex,
             children: _pages,
           ),
           bottomNavigationBar: Container(
-            margin: const EdgeInsets.fromLTRB(20, 0, 20, 25),
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(35),
+              color: theme.colorScheme.surface, // Cyber Surface
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1B5E20).withOpacity(0.15),
-                  blurRadius: 30,
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
                   offset: const Offset(0, 10),
                 )
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(35),
+              borderRadius: BorderRadius.circular(30),
               child: NavigationBarTheme(
                 data: NavigationBarThemeData(
-                  backgroundColor: Colors.white,
-                  indicatorColor: const Color(0xFFE8F5E9),
+                  backgroundColor: theme.colorScheme.surface,
+                  indicatorColor: theme.primaryColor.withOpacity(0.15),
                   labelTextStyle: MaterialStateProperty.all(
-                    GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600)
+                    GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey)
                   ),
+                  iconTheme: MaterialStateProperty.resolveWith((states) {
+                    if (states.contains(MaterialState.selected)) {
+                      return IconThemeData(color: theme.primaryColor);
+                    }
+                    return const IconThemeData(color: Colors.grey);
+                  }),
                 ),
                 child: NavigationBar(
                   height: 70,
+                  elevation: 0,
                   selectedIndex: _currentIndex,
                   onDestinationSelected: (index) => setState(() => _currentIndex = index),
                   destinations: [
@@ -149,8 +157,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildNavItem(IconData selected, IconData unselected, String label) {
     return NavigationDestination(
-      icon: Icon(unselected, color: Colors.grey.shade600),
-      selectedIcon: Icon(selected, color: const Color(0xFF1B5E20)).animate().scale(duration: 200.ms),
+      icon: Icon(unselected),
+      selectedIcon: Icon(selected).animate().scale(duration: 200.ms),
       label: label,
     );
   }
@@ -327,7 +335,6 @@ class _HomeNewsTabState extends State<HomeNewsTab> {
   Future<void> _launchURL(String url) async {
     final Uri uri = Uri.parse(url);
     try {
-      // FIXED: Use externalApplication to force browser open
       if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
         throw 'Could not launch $url';
       }
@@ -343,6 +350,8 @@ class _HomeNewsTabState extends State<HomeNewsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return SafeArea(
       child: Column(
         children: [
@@ -354,10 +363,10 @@ class _HomeNewsTabState extends State<HomeNewsTab> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("${AppLocale.get('welcome')} $_userName", style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14)),
+                    Text("${AppLocale.get('welcome')} $_userName", style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14)),
                     Row(
                       children: [
-                        Text(AppLocale.get('live_feed'), style: GoogleFonts.poppins(color: const Color(0xFF1B5E20), fontSize: 24, fontWeight: FontWeight.bold)), // Adjusted Size
+                        Text(AppLocale.get('live_feed'), style: GoogleFonts.poppins(color: theme.primaryColor, fontSize: 24, fontWeight: FontWeight.bold)), // Adjusted Size
                         const SizedBox(width: 8),
                         Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle))
                           .animate(onPlay: (c) => c.repeat(reverse: true)).scale(duration: 800.ms, begin: const Offset(0.8, 0.8), end: const Offset(1.2, 1.2)),
@@ -366,11 +375,15 @@ class _HomeNewsTabState extends State<HomeNewsTab> {
                   ],
                 ),
                 Container(
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]),
+                  decoration: BoxDecoration(
+                    color: theme.cardColor, 
+                    borderRadius: BorderRadius.circular(12), 
+                    border: Border.all(color: Colors.white10)
+                  ),
                   child: IconButton(
                     icon: _isLoading 
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1B5E20)))
-                      : const Icon(Icons.refresh, color: Color(0xFF1B5E20)),
+                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: theme.primaryColor))
+                      : Icon(Icons.refresh, color: theme.primaryColor),
                     onPressed: () => _fetchRealNews(isManual: true),
                   ),
                 )
@@ -381,83 +394,70 @@ class _HomeNewsTabState extends State<HomeNewsTab> {
           Expanded(
             child: newsList.isEmpty 
               ? Center(child: _isLoading 
-                  ? const CircularProgressIndicator(color: Color(0xFF1B5E20))
-                  : Text(AppLocale.get('no_intel')))
+                  ? CircularProgressIndicator(color: theme.primaryColor)
+                  : Text(AppLocale.get('no_intel'), style: const TextStyle(color: Colors.grey)))
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: newsList.length,
                   itemBuilder: (context, index) {
                     final news = newsList[index];
-                    return Container(
+                    return Card(
                       margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5))
-                        ]
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () => _launchURL(news['url']),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                                child: Image.network(
-                                  news['image'],
-                                  height: 160,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (c, o, s) => Container(
-                                    height: 160, color: Colors.grey.shade200, 
-                                    child: const Icon(Icons.broken_image, color: Colors.grey)
-                                  ),
-                                ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => _launchURL(news['url']),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image.network(
+                              news['image'],
+                              height: 160,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, o, s) => Container(
+                                height: 160, color: Colors.grey.shade900, 
+                                child: const Icon(Icons.broken_image, color: Colors.grey)
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFF1B5E20).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(4)
-                                          ),
-                                          child: Text(news['source'], style: const TextStyle(color: Color(0xFF1B5E20), fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(15),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: theme.primaryColor.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(4)
                                         ),
-                                        const Spacer(),
-                                        const Icon(Icons.access_time, size: 12, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text(_formatTime(news['timeRaw']), style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      news['title'],
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      news['description'],
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
+                                        child: Text(news['source'], style: TextStyle(color: theme.primaryColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ),
+                                      const Spacer(),
+                                      const Icon(Icons.access_time, size: 12, color: Colors.grey),
+                                      const SizedBox(width: 4),
+                                      Text(_formatTime(news['timeRaw']), style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    news['title'],
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    news['description'],
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
                         ),
                       ),
                     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
@@ -585,7 +585,7 @@ class _UserProfileTabState extends State<UserProfileTab> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(AppLocale.get('select_lang'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(AppLocale.get('select_lang'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 15),
             _buildLanguageOption("English", "Default", "en"),
             const Divider(),
@@ -603,8 +603,8 @@ class _UserProfileTabState extends State<UserProfileTab> {
         backgroundColor: isSelected ? const Color(0xFF1B5E20) : Colors.grey.shade200,
         child: Text(code.toUpperCase(), style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontSize: 12)),
       ),
-      title: Text(langName, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(sub),
+      title: Text(langName, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+      subtitle: Text(sub, style: const TextStyle(color: Colors.black54)),
       trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF1B5E20)) : null,
       onTap: () {
         setState(() => _language = langName);
@@ -618,13 +618,14 @@ class _UserProfileTabState extends State<UserProfileTab> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(AppLocale.get('support_title')),
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text(AppLocale.get('support_title'), style: const TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.chat, color: Colors.green),
-              title: Text(AppLocale.get('wa_us')),
+              title: Text(AppLocale.get('wa_us'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(ctx);
                 _launchExternal("https://wa.me/254700000000"); // Replace with valid number
@@ -632,7 +633,7 @@ class _UserProfileTabState extends State<UserProfileTab> {
             ),
             ListTile(
               leading: const Icon(Icons.email, color: Colors.blue),
-              title: Text(AppLocale.get('email_hq')),
+              title: Text(AppLocale.get('email_hq'), style: const TextStyle(color: Colors.white)),
               onTap: () {
                 Navigator.pop(ctx);
                 _launchExternal("mailto:support@cybermfukoni.co.ke");
@@ -640,7 +641,7 @@ class _UserProfileTabState extends State<UserProfileTab> {
             ),
             ListTile(
               leading: const Icon(Icons.question_answer, color: Colors.orange),
-              title: Text(AppLocale.get('faqs')),
+              title: Text(AppLocale.get('faqs'), style: const TextStyle(color: Colors.white)),
               onTap: () => Navigator.pop(ctx),
             ),
           ],
@@ -654,6 +655,8 @@ class _UserProfileTabState extends State<UserProfileTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(25.0),
@@ -664,16 +667,17 @@ class _UserProfileTabState extends State<UserProfileTab> {
             Container(
               padding: const EdgeInsets.all(25),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)]),
+                gradient: LinearGradient(colors: [theme.primaryColor.withOpacity(0.8), theme.primaryColor.withOpacity(0.4)]),
                 borderRadius: BorderRadius.circular(25),
-                boxShadow: [BoxShadow(color: const Color(0xFF1B5E20).withOpacity(0.4), blurRadius: 20, offset: const Offset(0, 10))]
+                border: Border.all(color: theme.primaryColor),
+                boxShadow: [BoxShadow(color: theme.primaryColor.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 10))]
               ),
               child: Row(
                 children: [
                   Container(
                     width: 70, height: 70,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: Colors.black26,
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                       image: const DecorationImage(image: AssetImage('assets/avatar.png'))
@@ -688,9 +692,9 @@ class _UserProfileTabState extends State<UserProfileTab> {
                         const SizedBox(height: 5),
                         Row(
                           children: [
-                            const Icon(Icons.shield, color: Colors.greenAccent, size: 14),
+                            const Icon(Icons.shield, color: Colors.white, size: 14),
                             const SizedBox(width: 5),
-                            Text(AppLocale.get('level'), style: GoogleFonts.sourceCodePro(color: Colors.greenAccent, fontSize: 12)),
+                            Text(AppLocale.get('level'), style: GoogleFonts.sourceCodePro(color: Colors.white, fontSize: 12)),
                           ],
                         ),
                         Text("${AppLocale.get('active_since')} $_joinDate", style: const TextStyle(color: Colors.white70, fontSize: 11)),
@@ -707,7 +711,7 @@ class _UserProfileTabState extends State<UserProfileTab> {
               margin: const EdgeInsets.only(bottom: 25),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: _scanStatus == "SAFE" ? Colors.green.shade50 : (_scanStatus == "SCANNING" ? Colors.blue.shade50 : Colors.orange.shade50),
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: _scanColor.withOpacity(0.5))
               ),
@@ -724,14 +728,14 @@ class _UserProfileTabState extends State<UserProfileTab> {
                       children: [
                         Text("${AppLocale.get('device_status')}: $_scanStatus", style: TextStyle(fontWeight: FontWeight.bold, color: _scanColor)),
                         const SizedBox(height: 2),
-                        Text(_scanMessage, style: const TextStyle(fontSize: 12, color: Colors.black87), overflow: TextOverflow.ellipsis),
+                        Text(_scanMessage, style: TextStyle(fontSize: 12, color: Colors.grey[400]), overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),
                   if (_scanStatus != "SCANNING")
                     TextButton(
                       onPressed: _runSecurityScan, 
-                      child: Text(AppLocale.get('scan_now'))
+                      child: Text(AppLocale.get('scan_now'), style: TextStyle(color: theme.primaryColor))
                     )
                 ],
               ),
@@ -740,20 +744,20 @@ class _UserProfileTabState extends State<UserProfileTab> {
             Text(AppLocale.get('preferences'), style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 10),
             
-            _buildActionItem(Icons.language, AppLocale.get('language'), _language, _showLanguageSelector),
+            _buildActionItem(context, Icons.language, AppLocale.get('language'), _language, _showLanguageSelector),
             
             Container(
               margin: const EdgeInsets.only(bottom: 15),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)]),
+              decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(15)),
               child: SwitchListTile(
                 secondary: Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.notifications_active, color: Color(0xFF1B5E20)),
+                  decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: BorderRadius.circular(10)),
+                  child: Icon(Icons.notifications_active, color: theme.primaryColor),
                 ),
-                title: Text(AppLocale.get('alerts'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(_alertsEnabled ? AppLocale.get('on') : AppLocale.get('off'), style: const TextStyle(fontSize: 12)),
-                activeColor: const Color(0xFF1B5E20),
+                title: Text(AppLocale.get('alerts'), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                subtitle: Text(_alertsEnabled ? AppLocale.get('on') : AppLocale.get('off'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                activeColor: theme.primaryColor,
                 value: _alertsEnabled,
                 onChanged: (val) {
                   setState(() => _alertsEnabled = val);
@@ -766,8 +770,8 @@ class _UserProfileTabState extends State<UserProfileTab> {
             Text(AppLocale.get('community'), style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
             const SizedBox(height: 10),
 
-            _buildActionItem(Icons.person_add, AppLocale.get('recruit'), AppLocale.get('share_app'), _recruitAgent),
-            _buildActionItem(Icons.help_outline, AppLocale.get('help'), AppLocale.get('contact_hq'), _showSupportDialog),
+            _buildActionItem(context, Icons.person_add, AppLocale.get('recruit'), AppLocale.get('share_app'), _recruitAgent),
+            _buildActionItem(context, Icons.help_outline, AppLocale.get('help'), AppLocale.get('contact_hq'), _showSupportDialog),
             
             const SizedBox(height: 30),
 
@@ -783,7 +787,7 @@ class _UserProfileTabState extends State<UserProfileTab> {
                 icon: const Icon(Icons.power_settings_new),
                 label: Text(AppLocale.get('logout')),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade50,
+                  backgroundColor: Colors.red.withOpacity(0.1),
                   foregroundColor: Colors.red,
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
@@ -798,22 +802,22 @@ class _UserProfileTabState extends State<UserProfileTab> {
     );
   }
 
-  Widget _buildActionItem(IconData icon, String title, String subtitle, VoidCallback onTap) {
+  Widget _buildActionItem(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10)]
       ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: const Color(0xFF1B5E20)),
+          decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: theme.primaryColor),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
         onTap: onTap,
       ),
