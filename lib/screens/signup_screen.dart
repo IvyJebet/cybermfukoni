@@ -79,6 +79,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final theme = Theme.of(context);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -115,7 +116,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
 
-              // 3. White Container
+              // 3. Dark Container (Matches Login Screen)
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -123,9 +124,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 height: size.height * 0.80,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: theme.cardColor, // Uses the dark theme color
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(40),
                       topRight: Radius.circular(40),
                     ),
@@ -133,10 +134,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Register",
                         style: TextStyle(
-                          color: Color(0xFF1B5E20),
+                          color: theme.primaryColor, // Neon Green
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                         ),
@@ -153,7 +154,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         hint: "Full Name", 
                         icon: Icons.person_outline,
                         controller: _nameController,
-                        textCapitalization: TextCapitalization.words, // Auto-Capitalize Names
+                        textCapitalization: TextCapitalization.words, 
                       ),
                       CyberTextField(
                         hint: "Email Address", 
@@ -187,23 +188,23 @@ class _SignupScreenState extends State<SignupScreen> {
 
                       const Row(
                         children: [
-                          Expanded(child: Divider()),
+                          Expanded(child: Divider(color: Colors.grey)),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: Text("Or continue with", style: TextStyle(color: Colors.grey)),
                           ),
-                          Expanded(child: Divider()),
+                          Expanded(child: Divider(color: Colors.grey)),
                         ],
                       ),
                       const SizedBox(height: 20),
 
-                      // Social Icons (Now Clickable)
+                      // Social Icons
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           _socialButton(Icons.g_mobiledata, Colors.red, "Google"),
                           const SizedBox(width: 20),
-                          _socialButton(Icons.apple, Colors.black, "Apple"),
+                          _socialButton(Icons.apple, Colors.white, "Apple"), // White icon for dark bg
                           const SizedBox(width: 20),
                           _socialButton(Icons.facebook, Colors.blue, "Facebook"),
                         ],
@@ -218,11 +219,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           const Text("Already have an account? ", style: TextStyle(color: Colors.grey)),
                           GestureDetector(
                             onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen())),
-                            child: const Text(
+                            child: Text(
                               "Sign in",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1B5E20),
+                                color: theme.primaryColor, // Neon Green
                                 decoration: TextDecoration.underline,
                               ),
                             ),
@@ -242,14 +243,14 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Widget _socialButton(IconData icon, Color color, String platform) {
-    return InkWell( // Makes it clickable with ripple effect
+    return InkWell( 
       onTap: () => _handleSocialClick(platform),
       borderRadius: BorderRadius.circular(50),
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: Colors.grey.shade700),
         ),
         child: Icon(icon, color: color, size: 30),
       ),
@@ -267,15 +268,15 @@ class SocialAuthPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, iconTheme: const IconThemeData(color: Colors.white)),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const CircularProgressIndicator(color: Color(0xFF1B5E20)),
             const SizedBox(height: 20),
-            Text("Connecting to $platform...", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("Connecting to $platform...", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
             const SizedBox(height: 10),
             const Text("This simulates the external OAuth login.", style: TextStyle(color: Colors.grey)),
           ],

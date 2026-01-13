@@ -81,7 +81,6 @@ class CyberMfukoniApp extends StatelessWidget {
           primary: cyberGreen,
           secondary: cyberGreen,
           surface: cyberSurface,
-          background: cyberBlack,
           onPrimary: Colors.black, // Text on green buttons
           onSurface: Colors.white, // Text on dark cards
         ),

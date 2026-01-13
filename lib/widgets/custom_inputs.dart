@@ -24,28 +24,35 @@ class CyberTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determine if we are in dark mode (which is default for this app)
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        // Dark background for inputs to match the theme
+        color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(30),
+        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword ? isObscured : false,
         keyboardType: keyboardType,
         textCapitalization: textCapitalization, // Handles Auto-Caps
-        style: const TextStyle(color: Colors.black87),
+        // Make text white in dark mode
+        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-          prefixIcon: Icon(icon, color: Colors.grey.shade600),
+          // Lighter grey hints for better contrast on dark bg
+          hintStyle: TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey.shade500, fontSize: 14),
+          prefixIcon: Icon(icon, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
           // Interactive Eye Icon
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
                     isObscured ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.grey.shade400,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade400,
                   ),
                   onPressed: onEyePressed,
                 )
@@ -72,8 +79,8 @@ class CyberButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1B5E20),
-          foregroundColor: Colors.white,
+          backgroundColor: const Color(0xFF00E676), // Use Neon Green from theme
+          foregroundColor: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           elevation: 5,
         ),

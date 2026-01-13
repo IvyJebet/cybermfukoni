@@ -72,8 +72,13 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
       feedbackMsg = "FORTIFIED: MILITARY GRADE";
     }
 
-    // Common patterns override
-    if (password.toLowerCase().contains("password") || password.contains("123456")) {
+    // 4. Kenyan Specific Pattern Detection
+    String lowerPass = password.toLowerCase();
+    if (lowerPass.contains("password") || 
+        lowerPass.contains("123456") || 
+        lowerPass.contains("kenya") || 
+        lowerPass.contains("mpesa") ||
+        lowerPass.contains("safaricom")) {
       calculatedScore = 0;
       secondsToCrack = 0;
       newColor = const Color(0xFFFF5252);
@@ -101,97 +106,117 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ---------------------------------------------------------
+    // SHARED BACKGROUND (Dark Cyber Theme)
+    // ---------------------------------------------------------
     return Scaffold(
-      backgroundColor: const Color(0xFFE8F5E9),
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Digital Boma", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text("Digital Boma", style: GoogleFonts.orbitron(fontWeight: FontWeight.bold, letterSpacing: 1)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: const Color(0xFF1B5E20),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header
-            const Icon(Icons.shield_outlined, size: 50, color: Color(0xFF1B5E20))
-                .animate().fadeIn().scale(),
-            const SizedBox(height: 5),
-            Text(
-              "Fortress Analyzer",
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF1B5E20)),
-            ),
-            const SizedBox(height: 25),
-
-            // Input Field
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15, offset: const Offset(0, 5))],
-              ),
-              child: TextField(
-                controller: _passController,
-                onChanged: _analyzePassword,
-                obscureText: false,
-                style: GoogleFonts.sourceCodePro(fontSize: 18, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  hintText: "Enter password to test...",
-                  hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 14),
-                  prefixIcon: const Icon(Icons.vpn_key, color: Color(0xFF1B5E20)),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                  suffixIcon: _passController.text.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey),
-                        onPressed: () {
-                          _passController.clear();
-                          _analyzePassword("");
-                        },
-                      ) 
-                    : null
+      body: Container(
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0D1117), Color(0xFF161B22)],
+          )
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header Icon
+                Icon(Icons.security, size: 50, color: _hasInput ? _statusColor : const Color(0xFF00E676))
+                    .animate().fadeIn().scale(),
+                const SizedBox(height: 10),
+                Text(
+                  "Fortress Analyzer",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
-              ),
+                Text(
+                  "Test your password strength against brute-force attacks.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
+                const SizedBox(height: 30),
+
+                // High Contrast Input Field
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161B22), // Dark Card
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _hasInput ? _statusColor.withOpacity(0.5) : Colors.white24),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))],
+                  ),
+                  child: TextField(
+                    controller: _passController,
+                    onChanged: _analyzePassword,
+                    obscureText: false,
+                    style: GoogleFonts.sourceCodePro(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+                    cursorColor: const Color(0xFF00E676),
+                    decoration: InputDecoration(
+                      hintText: "Enter password to test...",
+                      hintStyle: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 14),
+                      prefixIcon: Icon(Icons.vpn_key, color: _hasInput ? _statusColor : const Color(0xFF00E676)),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                      suffixIcon: _passController.text.isNotEmpty 
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            onPressed: () {
+                              _passController.clear();
+                              _analyzePassword("");
+                            },
+                          ) 
+                        : null
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // THE HACKER TERMINAL
+                _buildHackerTerminal(),
+
+                const SizedBox(height: 30),
+
+                // Educational Section (Only if score is low)
+                if (_hasInput && _score < 3) 
+                  _buildEducationSection(),
+              ],
             ),
-
-            const SizedBox(height: 30),
-
-            // THE PROFESSIONAL TERMINAL
-            _buildHackerTerminal(),
-
-            const SizedBox(height: 30),
-
-            // Educational Section
-            if (_hasInput && _score < 3) 
-              _buildEducationSection(),
-          ],
+          ),
         ),
       ),
     );
   }
 
   // ---------------------------------------------------------
-  // NEW: PROFESSIONAL TERMINAL UI
+  // PROFESSIONAL TERMINAL UI
   // ---------------------------------------------------------
   Widget _buildHackerTerminal() {
     return Container(
-      // The "Container" holds the terminal shape and outer glow
       decoration: BoxDecoration(
-        color: const Color(0xFF0D1117), // Deep space black
+        color: Colors.black, // Terminal Black
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _hasInput ? _statusColor.withOpacity(0.5) : Colors.white12, 
-          width: 1.5
+          color: _hasInput ? _statusColor.withOpacity(0.8) : Colors.white12, 
+          width: 2
         ),
         boxShadow: [
-          // The Neon Glow Effect
           if (_hasInput)
             BoxShadow(
-              color: _statusColor.withOpacity(0.2),
-              blurRadius: 20,
+              color: _statusColor.withOpacity(0.3),
+              blurRadius: 25,
               spreadRadius: 2,
             )
         ],
@@ -200,12 +225,12 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            // Background Grid Effect (Optional detail)
+            // Background Grid Effect
             Positioned.fill(
               child: Opacity(
-                opacity: 0.05,
+                opacity: 0.1,
                 child: Image.asset('assets/matrix_bg.jpg', fit: BoxFit.cover, 
-                  errorBuilder: (c, o, s) => Container() // Fallback if image missing
+                  errorBuilder: (c, o, s) => Container() 
                 ),
               ),
             ),
@@ -227,12 +252,13 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
                           Text("BRUTE_FORCE_SIM_v4.2", style: GoogleFonts.sourceCodePro(color: Colors.white38, fontSize: 10, letterSpacing: 1.5)),
                         ],
                       ),
-                      // Animated Blinking Dot
+                      // Blinking Dot
                       Container(
                         width: 8, height: 8,
                         decoration: BoxDecoration(
                           color: _hasInput ? _statusColor : Colors.grey,
-                          shape: BoxShape.circle
+                          shape: BoxShape.circle,
+                          boxShadow: _hasInput ? [BoxShadow(color: _statusColor, blurRadius: 5)] : null
                         ),
                       ).animate(onPlay: (c) => c.repeat(reverse: true)).fade(duration: 800.ms),
                     ],
@@ -250,7 +276,7 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
                       color: _hasInput ? _statusColor : Colors.white24,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      shadows: _hasInput ? [Shadow(color: _statusColor, blurRadius: 10)] : []
+                      shadows: _hasInput ? [Shadow(color: _statusColor, blurRadius: 15)] : []
                     ),
                   ),
                   
@@ -326,9 +352,9 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
       children: [
         Text("STRENGTHEN DEFENSES:", style: GoogleFonts.oswald(color: Colors.grey, fontSize: 14, letterSpacing: 1.5)),
         const SizedBox(height: 10),
-        _buildTipCard(Icons.short_text, "Too Short", "Length is the most critical factor. Aim for 12+ characters."),
+        _buildTipCard(Icons.short_text, "Too Short?", "Length is critical. Aim for 12+ characters."),
         const SizedBox(height: 10),
-        _buildTipCard(Icons.spellcheck, "Predictable", "Avoid dictionary words. Use a phrase like 'Blue!Coffee#Jump' instead."),
+        _buildTipCard(Icons.spellcheck, "Predictable?", "Avoid words like 'Kenya', 'Mpesa', or your name."),
       ],
     ).animate().fadeIn().slideY(begin: 0.2, end: 0);
   }
@@ -337,24 +363,24 @@ class _DigitalBomaScreenState extends State<DigitalBomaScreen> {
     return Container(
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF161B22),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5)]
+        border: Border.all(color: Colors.white10),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: const Color(0xFF1B5E20), size: 20),
+            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: const Color(0xFF00E676), size: 20),
           ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(subtitle, style: GoogleFonts.poppins(color: Colors.grey.shade600, fontSize: 12)),
+                Text(title, style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
+                Text(subtitle, style: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 12)),
               ],
             ),
           )
