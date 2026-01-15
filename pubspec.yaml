@@ -30,7 +30,7 @@ dependencies:
   freerasp: ^6.0.0
   http: ^1.1.0
   intl: ^0.18.1
-  url_launcher: ^6.1.11
+  url_launcher: ^6.3.2
   share_plus: ^7.2.1
 
   # File Saving & Permissions (Added for Chonjo License Feature)
