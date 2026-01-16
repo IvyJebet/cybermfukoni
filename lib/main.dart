@@ -2,22 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/landing_screen.dart';
 import 'screens/home_screen.dart'; 
+import 'services/security_service.dart'; // <--- ADDED THIS IMPORT
 
 void main() async {
-  // 1. Ensure bindings are initialized (Required before Hive init)
+  // 1. Ensure bindings are initialized (Required before Hive init and Firebase)
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Initialize Offline Database
+  // 2. Initialize Offline Database (Hive)
   await Hive.initFlutter();
   
-  // 3. Open necessary boxes (Database tables)
+  // 3. Initialize Firebase (The Cloud)
+  // We wrap this in a try-catch to ensure the app still works offline 
+  // or if configuration is missing during development.
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase Error: $e"); 
+  }
+
+  // --- NEW: START SECURITY MONITOR ---
+  // We don't await this because we want it running in the background constantly
+  SecurityService().init(); 
+  // -----------------------------------
+  
+  // 4. Open necessary boxes (Database tables)
   await Hive.openBox('settings'); // For app settings & session data
   await Hive.openBox('reports');  // For Mulika tool
   await Hive.openBox('users');    // For Login/Signup System
   
-  // 4. Session Logic: Check if we should auto-login
+  // 5. Session Logic: Check if we should auto-login
   Widget startScreen = const LandingScreen(); // Default to Landing
   final settings = Hive.box('settings');
 
@@ -41,7 +57,7 @@ void main() async {
   }
 
   runApp(
-    // 5. Wrap App in Provider to handle State (Language Switching)
+    // 6. Wrap App in Provider to handle State (Language Switching)
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
@@ -69,7 +85,7 @@ class CyberMfukoniApp extends StatelessWidget {
       title: 'Cyber Mfukoni',
       debugShowCheckedModeBanner: false,
       
-      // 6. Professional Dark Theme Configuration
+      // 7. Professional Dark Theme Configuration
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
@@ -92,7 +108,6 @@ class CyberMfukoniApp extends StatelessWidget {
         ),
 
         // Card Styling (Glassy/Modern)
-        // FIXED: Changed CardTheme to CardThemeData
         cardTheme: CardThemeData(
           color: cyberSurface,
           elevation: 0,
@@ -145,7 +160,7 @@ class CyberMfukoniApp extends StatelessWidget {
         ),
       ),
       
-      // 7. Use the dynamic start screen (Home or Landing)
+      // 8. Use the dynamic start screen (Home or Landing)
       home: startScreen,
     );
   }

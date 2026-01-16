@@ -1,3 +1,22 @@
+// android/build.gradle.kts
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // This adds the Google Services plugin to your project
+        classpath("com.google.gms:google-services:4.4.1") 
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
 allprojects {
     repositories {
         google()

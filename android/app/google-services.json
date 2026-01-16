@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "608229740356",
+    "project_id": "cybermfukoni-cf631",
+    "storage_bucket": "cybermfukoni-cf631.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608229740356:android:edea8ad51d7f5a925c1111",
+        "android_client_info": {
+          "package_name": "com.example.cybermfukoni"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyY-8VKi6TF2hfUufqLXh2jFFp9cBeWnY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

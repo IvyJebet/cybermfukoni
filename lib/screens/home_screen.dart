@@ -14,6 +14,8 @@ import 'chonjo_screen.dart';
 import 'digital_boma_screen.dart';
 import 'mulika_screen.dart';
 import 'landing_screen.dart';
+import 'daktari_screen.dart';
+import '../services/security_service.dart'; // <--- ADDED THIS IMPORT
 
 // ---------------------------------------------------------
 // LOCALIZATION ENGINE
@@ -105,6 +107,23 @@ class _HomeScreenState extends State<HomeScreen> {
         return Scaffold(
           extendBody: true, // Allows content to flow behind nav bar for that modern look
           backgroundColor: theme.scaffoldBackgroundColor,
+          
+          // --- NEW: PANIC BUTTON (DAKTARI) ---
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context, 
+                MaterialPageRoute(builder: (context) => const DaktariScreen())
+              );
+            },
+            backgroundColor: Colors.red, // High visibility red
+            child: const Icon(Icons.sos, color: Colors.white, size: 30),
+            elevation: 10,
+            tooltip: "Panic Mode",
+          ).animate().scale(delay: 500.ms, duration: 400.ms, curve: Curves.elasticOut),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Bottom right
+          // ------------------------------
+
           body: IndexedStack(
             index: _currentIndex,
             children: _pages,
@@ -596,7 +615,7 @@ class _HomeNewsTabState extends State<HomeNewsTab> {
 }
 
 // ---------------------------------------------------------
-// TAB 5: AGENT HQ (Profile) - Fully Upgraded
+// TAB 5: AGENT HQ (Profile) - REAL SECURITY
 // ---------------------------------------------------------
 class UserProfileTab extends StatefulWidget {
   const UserProfileTab({super.key});
@@ -611,9 +630,15 @@ class _UserProfileTabState extends State<UserProfileTab> {
   String _language = "English";
   bool _alertsEnabled = true;
   
+  // Real Security State
+  bool _isScanning = false;
+  final SecurityService _securityService = SecurityService();
+  
+  // FIXED: THESE VARIABLES ARE NOW DEFINED
   String _scanStatus = "PENDING"; 
   String _lastScanText = "Last scan: Never";
   Color _scanColor = Colors.orange;
+  // -------------------------------------
   
   final Box _settingsBox = Hive.box('settings');
 
@@ -653,8 +678,9 @@ class _UserProfileTabState extends State<UserProfileTab> {
   void _updateLastScanText(DateTime date) {
     final diff = DateTime.now().difference(date);
     String timeAgo;
-    if (diff.inMinutes < 1) timeAgo = "Just now";
-    else if (diff.inMinutes < 60) timeAgo = "${diff.inMinutes} mins ago";
+    if (diff.inMinutes < 1) {
+      timeAgo = "Just now";
+    } else if (diff.inMinutes < 60) timeAgo = "${diff.inMinutes} mins ago";
     else if (diff.inHours < 24) timeAgo = "${diff.inHours} hours ago";
     else timeAgo = "${diff.inDays} days ago";
     
@@ -670,11 +696,11 @@ class _UserProfileTabState extends State<UserProfileTab> {
   }
 
   // --- FEATURE: REALISTIC SCAN ---
-  void _runSecurityScan() async {
-    if (_scanStatus == "SCANNING") return;
+  void _runRealScan() async {
+    if (_isScanning) return;
 
     setState(() {
-      _scanStatus = "SCANNING";
+      _isScanning = true;
       _scanColor = Colors.blue;
     });
 
@@ -697,6 +723,7 @@ class _UserProfileTabState extends State<UserProfileTab> {
     if (!mounted) return;
 
     setState(() {
+      _isScanning = false;
       _scanStatus = "SAFE";
       _scanColor = const Color(0xFF00E676);
       _updateLastScanText(now);
@@ -709,36 +736,92 @@ class _UserProfileTabState extends State<UserProfileTab> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(25),
-        decoration: BoxDecoration(
-          color: const Color(0xFF161B22),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-          border: Border.all(color: const Color(0xFF00E676).withOpacity(0.3))
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, size: 60, color: Color(0xFF00E676)),
-            const SizedBox(height: 15),
-            Text("SYSTEM SECURE", style: GoogleFonts.orbitron(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-            const SizedBox(height: 20),
-            _buildReportRow("Root Access", "Not Detected", Colors.green),
-            _buildReportRow("Play Protect", "Active", Colors.green),
-            _buildReportRow("Encryption", "AES-256 Enabled", Colors.green),
-            _buildReportRow("Malicious Apps", "0 Found", Colors.green),
-            const SizedBox(height: 25),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(ctx),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00E676), foregroundColor: Colors.black),
-                child: const Text("CLOSE REPORT"),
+      builder: (ctx) {
+        // Listen to the real security service
+        return ValueListenableBuilder<List<String>>(
+          valueListenable: _securityService.currentThreats,
+          builder: (context, threats, _) {
+            bool isSafe = threats.isEmpty;
+            Color statusColor = isSafe ? const Color(0xFF00E676) : Colors.red;
+            
+            return Container(
+              padding: const EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161B22),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+                border: Border.all(color: statusColor.withOpacity(0.3))
               ),
-            )
-          ],
-        ),
-      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(isSafe ? Icons.gpp_good : Icons.gpp_bad, size: 60, color: statusColor),
+                  const SizedBox(height: 15),
+                  
+                  // --- TITLE ---
+                  Text(
+                    isSafe ? "SYSTEM SECURE" : "INTEGRITY COMPROMISED", 
+                    style: GoogleFonts.orbitron(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)
+                  ),
+                  
+                  // --- NEW: LAST SCAN TIME (Updates Automatically) ---
+                  const SizedBox(height: 5),
+                  Text(
+                    _lastScanText, // This variable holds "Last scan: Just now"
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12, letterSpacing: 1),
+                  ),
+                  // --------------------------------------------------
+
+                  const SizedBox(height: 20),
+                  
+                  // Dynamic Report List
+                  if (isSafe)
+                    Column(
+                      children: [
+                        _buildReportRow("Root / Jailbreak", "Clean", Colors.green),
+                        _buildReportRow("Hooking Frameworks", "Clean", Colors.green),
+                        _buildReportRow("App Tampering", "Clean", Colors.green),
+                        _buildReportRow("Debugger", "Clean", Colors.green),
+                      ],
+                    )
+                  else
+                    Column(
+                      children: threats.map((threat) => 
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(threat, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                                    Text(_securityService.getAdviceForThreat(threat), style: TextStyle(color: Colors.grey[400], fontSize: 11)),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
+                        )
+                      ).toList(),
+                    ),
+
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: ElevatedButton.styleFrom(backgroundColor: statusColor, foregroundColor: Colors.black),
+                      child: Text(isSafe ? "CLOSE REPORT" : "ACKNOWLEDGE RISKS"),
+                    ),
+                  )
+                ],
+              ),
+            );
+          }
+        );
+      },
     );
   }
 
@@ -904,149 +987,159 @@ class _UserProfileTabState extends State<UserProfileTab> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(25.0),
-        child: Column(
-          children: [
-            // Profile Header
-            Container(
-              padding: const EdgeInsets.all(25),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [const Color(0xFF161B22), theme.primaryColor.withOpacity(0.1)]),
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withOpacity(0.05)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 70, height: 70,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: theme.primaryColor, width: 2),
-                      image: const DecorationImage(image: AssetImage('assets/avatar.png'))
-                    ),
+    // Listen to real threats to update the main card color/icon
+    return ValueListenableBuilder<List<String>>(
+      valueListenable: _securityService.currentThreats,
+      builder: (context, threats, _) {
+        bool isSafe = threats.isEmpty;
+        Color statusColor = isSafe ? const Color(0xFF00E676) : Colors.red;
+        String statusText = isSafe ? "Safe" : "${threats.length} Threats";
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(25.0),
+            child: Column(
+              children: [
+                // Profile Header
+                Container(
+                  padding: const EdgeInsets.all(25),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [const Color(0xFF161B22), theme.primaryColor.withOpacity(0.1)]),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: Colors.white.withOpacity(0.05)),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_userName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 5),
-                        Row(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 70, height: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: theme.primaryColor, width: 2),
+                          image: const DecorationImage(image: AssetImage('assets/avatar.png'))
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.shield, color: theme.primaryColor, size: 14),
-                            const SizedBox(width: 5),
-                            Text(AppLocale.get('level'), style: GoogleFonts.sourceCodePro(color: theme.primaryColor, fontSize: 12)),
+                            Text(_userName, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Icon(Icons.shield, color: theme.primaryColor, size: 14),
+                                const SizedBox(width: 5),
+                                Text(AppLocale.get('level'), style: GoogleFonts.sourceCodePro(color: theme.primaryColor, fontSize: 12)),
+                              ],
+                            ),
+                            Text("${AppLocale.get('active_since')} $_joinDate", style: const TextStyle(color: Colors.grey, fontSize: 11)),
                           ],
                         ),
-                        Text("${AppLocale.get('active_since')} $_joinDate", style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                      ],
+                      )
+                    ],
+                  ),
+                ).animate().scale(),
+
+                const SizedBox(height: 30),
+
+                // REAL SCAN STATUS CARD
+                Container(
+                  margin: const EdgeInsets.only(bottom: 25),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF161B22),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: statusColor.withOpacity(0.5))
+                  ),
+                  child: Row(
+                    children: [
+                      _isScanning 
+                        ? SizedBox(width: 30, height: 30, child: CircularProgressIndicator(color: statusColor, strokeWidth: 3))
+                        : Icon(isSafe ? Icons.gpp_good : Icons.gpp_bad, color: statusColor, size: 30),
+                      
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(isSafe ? "Device Integrity" : "Security Alert", style: TextStyle(fontWeight: FontWeight.bold, color: statusColor)),
+                            const SizedBox(height: 2),
+                            Text(isSafe ? "System is secure" : "Threats detected: ${threats.length}", style: const TextStyle(fontSize: 12, color: Colors.grey), overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      if (!_isScanning)
+                        TextButton(
+                          onPressed: _runRealScan, 
+                          child: Text(AppLocale.get('scan_now'), style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold))
+                        )
+                    ],
+                  ),
+                ),
+
+                // Preferences Section
+                Align(alignment: Alignment.centerLeft, child: Text(AppLocale.get('preferences'), style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
+                const SizedBox(height: 10),
+                
+                _buildActionItem(context, Icons.language, AppLocale.get('language'), _language, _showLanguageSelector),
+                
+                Container(
+                  margin: const EdgeInsets.only(bottom: 15),
+                  decoration: BoxDecoration(color: const Color(0xFF161B22), borderRadius: BorderRadius.circular(15)),
+                  child: SwitchListTile(
+                    secondary: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(10)),
+                      child: Icon(Icons.notifications_active, color: theme.primaryColor),
                     ),
-                  )
-                ],
-              ),
-            ).animate().scale(),
+                    title: Text(AppLocale.get('alerts'), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    subtitle: Text(_alertsEnabled ? AppLocale.get('on') : AppLocale.get('off'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    activeThumbColor: theme.primaryColor,
+                    value: _alertsEnabled,
+                    onChanged: (val) {
+                      setState(() => _alertsEnabled = val);
+                      _settingsBox.put('notifications', val);
+                    },
+                  ),
+                ),
 
-            const SizedBox(height: 30),
+                const SizedBox(height: 20),
+                Align(alignment: Alignment.centerLeft, child: Text(AppLocale.get('community'), style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
+                const SizedBox(height: 10),
 
-            // Scan Status Card
-            Container(
-              margin: const EdgeInsets.only(bottom: 25),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF161B22),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _scanColor.withOpacity(0.5))
-              ),
-              child: Row(
-                children: [
-                  _scanStatus == "SCANNING" 
-                    ? SizedBox(width: 30, height: 30, child: CircularProgressIndicator(color: _scanColor, strokeWidth: 3))
-                    : Icon(_scanStatus == "SAFE" ? Icons.gpp_good : Icons.warning_amber_rounded, color: _scanColor, size: 30),
-                  
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("${AppLocale.get('device_status')}", style: TextStyle(fontWeight: FontWeight.bold, color: _scanColor)),
-                        const SizedBox(height: 2),
-                        Text(_lastScanText, style: const TextStyle(fontSize: 12, color: Colors.grey), overflow: TextOverflow.ellipsis),
-                      ],
+                _buildActionItem(context, Icons.person_add, AppLocale.get('recruit'), AppLocale.get('share_app'), _recruitAgent),
+                _buildActionItem(context, Icons.help_outline, AppLocale.get('help'), AppLocale.get('contact_hq'), _showSupportDialog),
+                
+                const SizedBox(height: 30),
+
+                // Logout Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                       final settings = Hive.box('settings');
+                       settings.delete('lastLoggedInUser');
+                       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LandingScreen()), (route) => false);
+                    }, 
+                    icon: const Icon(Icons.power_settings_new),
+                    label: Text(AppLocale.get('logout')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.withOpacity(0.1),
+                      foregroundColor: Colors.red,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
                     ),
                   ),
-                  if (_scanStatus != "SCANNING")
-                    TextButton(
-                      onPressed: _runSecurityScan, 
-                      child: Text(AppLocale.get('scan_now'), style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold))
-                    )
-                ],
-              ),
-            ),
-
-            // Preferences Section
-            Align(alignment: Alignment.centerLeft, child: Text(AppLocale.get('preferences'), style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
-            const SizedBox(height: 10),
-            
-            _buildActionItem(context, Icons.language, AppLocale.get('language'), _language, _showLanguageSelector),
-            
-            Container(
-              margin: const EdgeInsets.only(bottom: 15),
-              decoration: BoxDecoration(color: const Color(0xFF161B22), borderRadius: BorderRadius.circular(15)),
-              child: SwitchListTile(
-                secondary: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(10)),
-                  child: Icon(Icons.notifications_active, color: theme.primaryColor),
                 ),
-                title: Text(AppLocale.get('alerts'), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                subtitle: Text(_alertsEnabled ? AppLocale.get('on') : AppLocale.get('off'), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                activeColor: theme.primaryColor,
-                value: _alertsEnabled,
-                onChanged: (val) {
-                  setState(() => _alertsEnabled = val);
-                  _settingsBox.put('notifications', val);
-                },
-              ),
+                const SizedBox(height: 20),
+                Text(AppLocale.get('version'), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
             ),
-
-            const SizedBox(height: 20),
-            Align(alignment: Alignment.centerLeft, child: Text(AppLocale.get('community'), style: GoogleFonts.poppins(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 12))),
-            const SizedBox(height: 10),
-
-            _buildActionItem(context, Icons.person_add, AppLocale.get('recruit'), AppLocale.get('share_app'), _recruitAgent),
-            _buildActionItem(context, Icons.help_outline, AppLocale.get('help'), AppLocale.get('contact_hq'), _showSupportDialog),
-            
-            const SizedBox(height: 30),
-
-            // Logout Button
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                   final settings = Hive.box('settings');
-                   settings.delete('lastLoggedInUser');
-                   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LandingScreen()), (route) => false);
-                }, 
-                icon: const Icon(Icons.power_settings_new),
-                label: Text(AppLocale.get('logout')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.withOpacity(0.1),
-                  foregroundColor: Colors.red,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(AppLocale.get('version'), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 
